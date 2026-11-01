@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>絵文字ラボ：マイ・エモジ・ファクトリー</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"M PLUS Rounded 1c"', 'sans-serif'],
+                    },
+                    keyframes: {
+                        floatUp: {
+                            '0%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                            '100%': { opacity: '0', transform: 'translateY(-35px) scale(1.2)' }
+                        },
+                        bounceHero: {
+                            '0%, 100%': { transform: 'translateY(0) scale(1)' },
+                            '50%': { transform: 'translateY(-8px) scale(1.05)' }
+                        },
+                        popIn: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '80%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    },
+                    animation: {
+                        'float-up': 'floatUp 0.7s forwards linear',
+                        'bounce-hero': 'bounceHero 0.8s infinite ease-in-out',
+                        'pop-in': 'popIn 0.3s ease-out forwards'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* スマホのブラウザ表示領域に合わせ、下部タブまで画面内に収める */
+        html { height: 100%; }
+        body.h-screen { height: 100vh; height: 100dvh; min-height: 0; }
+        main { min-height: 0; }
+        main > .tab-view { min-height: 0; }
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col font-sans bg-slate-950 text-slate-100">
+
+    <!-- TOP STATS BAR -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 p-2.5 shadow-lg z-20 flex-none">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <!-- Resources -->
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-slate-950 px-3 py-1 rounded-full border border-amber-500/30">
+                    <span class="text-base mr-1">💰</span>
+                    <span id="stat-coins" class="font-black text-amber-400 text-base tracking-wide">0</span>
+                </div>
+                <div class="flex items-center bg-slate-950 px-2.5 py-1 rounded-full border border-purple-500/40 text-xs text-purple-300">
+                    <span class="mr-1 text-amber-400">⭐</span>
+                    <span>素材: <strong id="stat-trans-material" class="text-white font-bold">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Global Tools -->
+            <div class="flex items-center space-x-2">
+                <div class="text-[10px] bg-purple-950/80 border border-purple-500/40 text-purple-300 px-2 py-1 rounded-full font-bold">
+                    解禁: <span id="stat-unlocked-count" class="text-white font-black">0</span>/<span id="stat-total-count">0</span>
+                </div>
+                <button id="btn-sound" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 active:scale-95 text-amber-400 rounded-full flex items-center justify-center border border-slate-700 transition">
+                    <i class="fas fa-volume-up text-xs"></i>
+                </button>
+                <button id="btn-reset" title="データリセット" class="w-8 h-8 bg-slate-800 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 rounded-full flex items-center justify-center border border-slate-700 transition">
+                    <i class="fas fa-rotate-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTENT AREA -->
+    <main class="flex-1 max-w-md w-full mx-auto flex flex-col overflow-hidden relative">
+
+        <!-- ===== TAB 1: BATTLE & PARTY STAGE ===== -->
+        <div id="view-battle" class="tab-view flex-1 flex flex-col overflow-hidden">
+            <!-- BATTLE ARENA DISPLAY -->
+            <section class="h-52 bg-gradient-to-b from-slate-950 via-indigo-950/40 to-slate-950 p-3 flex flex-col justify-between border-b border-slate-800 relative overflow-hidden flex-none">
+                <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#818cf8_1px,transparent_1px)] [background-size:12px_12px]"></div>
+
+                <!-- Stage Header -->
+                <div class="relative z-10 flex justify-between items-center">
+                    <div class="bg-slate-950/80 backdrop-blur px-3 py-0.5 rounded-full border border-indigo-500/40 text-xs font-black text-indigo-300">
+                        <i class="fas fa-swords text-indigo-400 mr-1"></i> <span id="stage-title">STAGE 1-1</span>
+                    </div>
+                    <div class="text-[10px] text-indigo-300 font-bold bg-slate-950/80 px-2 py-0.5 rounded-full border border-slate-800">
+                        総DPS: <span id="stat-total-dps" class="text-white font-black">0</span>
+                    </div>
+                    <!-- Enemy HP -->
+                    <div class="w-32 bg-slate-950 rounded-full h-3.5 border border-slate-800 p-0.5 relative overflow-hidden">
+                        <div id="enemy-hp-bar" class="bg-gradient-to-r from-red-500 to-rose-400 h-full rounded-full transition-all duration-100" style="width: 100%;"></div>
+                        <span id="enemy-hp-text" class="absolute inset-0 flex items-center justify-center text-[9px] font-black text-white drop-shadow">10/10</span>
+                    </div>
+                </div>
+
+                <!-- Active Battle Squad vs Enemy -->
+                <div class="relative z-10 flex justify-between items-center px-4 my-auto">
+                    <!-- Party Battle Line -->
+                    <div id="party-frontline" class="flex items-center -space-x-3">
+                        <!-- Render Active Party Emoji Squad -->
+                    </div>
+
+                    <div class="text-xs font-black text-slate-600 italic">VS</div>
+
+                    <!-- Enemy Target -->
+                    <div id="enemy-target" class="relative text-5xl filter drop-shadow-[0_8px_12px_rgba(239,68,68,0.4)] cursor-pointer active:scale-95 transition transform">
+                        <span id="enemy-emoji">👾</span>
+                        <div id="damage-layer" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+                </div>
+
+                <div class="text-[10px] text-center text-slate-500 font-bold z-10">
+                    敵をタップ連打で直接攻撃可能！
+                </div>
+            </section>
+
+            <!-- PARTY MANAGEMENT LIST -->
+            <section class="flex-1 bg-slate-900/60 p-3 flex flex-col overflow-hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-black text-slate-300 flex items-center">
+                        <i class="fas fa-users text-amber-400 mr-1.5"></i> 出撃パーティ編成 (<span id="squad-count">0</span>/4)
+                    </h3>
+                    <button id="btn-quick-create" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] px-2.5 py-1 rounded-lg transition">
+                        ＋ キャラを作成
+                    </button>
+                </div>
+
+                <!-- Custom Emoji List (Roster) -->
+                <div id="roster-list" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    <!-- Dynamic Character Cards -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== TAB 2: EMOJI CREATOR & CUSTOMIZER ===== -->
+        <div id="view-creator" class="tab-view flex-1 flex flex-col overflow-hidden bg-slate-900/80 hidden p-3">
+            <h2 class="text-sm font-black text-amber-400 flex items-center mb-2">
+                <i class="fas fa-paint-brush mr-2 text-indigo-400"></i> マイ絵文字カスタマイズ
+            </h2>
+
+            <!-- Live Avatar Preview Card -->
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex items-center justify-between shadow-inner mb-3">
+                <div class="flex items-center space-x-3">
+                    <div id="preview-avatar" class="w-16 h-16 bg-slate-900 rounded-2xl border border-slate-700 flex items-center justify-center text-4xl relative shadow-md">
+                        <span id="prev-base">🥺</span>
+                        <span id="prev-deco" class="absolute -top-2 -right-2 text-xl">🔥</span>
+                        <span id="prev-aura" class="absolute inset-0 rounded-2xl ring-2 ring-amber-400/50 pointer-events-none"></span>
+                    </div>
+                    <div>
+                        <input type="text" id="creator-name-input" maxlength="10" placeholder="キャラの名前" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-sm font-bold text-white focus:outline-none focus:border-amber-400 w-36">
+                        <div class="text-[10px] text-slate-400 mt-1">タイプ: <span id="prev-type-name" class="text-indigo-300 font-bold">バランス型</span></div>
+                    </div>
+                </div>
+
+                <button id="btn-save-character" class="bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs px-3.5 py-2.5 rounded-xl shadow-md border-b-2 border-amber-700 active:scale-95 transition">
+                    保存 / 作成
+                </button>
+            </div>
+
+            <!-- Customizer Options Scroll Container -->
+            <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+                <!-- 1. Base Face Selector -->
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="text-[11px] font-extrabold text-slate-300">ベース顔絵文字 (解放済み)</label>
+                        <span class="text-[10px] text-purple-400 font-bold">合成で未解放をゲット！</span>
+                    </div>
+                    <div id="part-base-list" class="grid grid-cols-6 gap-1.5 max-h-40 overflow-y-auto p-1 bg-slate-900/50 rounded-lg border border-slate-800">
+                        <!-- Dynamic Emoji Options -->
+                    </div>
+                </div>
+
+                <!-- 2. Decoration / Aura Parts -->
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                    <label class="block text-[11px] font-extrabold text-slate-300 mb-1.5">オーラ・装飾パーツ</label>
+                    <div id="part-deco-list" class="flex space-x-1.5 overflow-x-auto pb-1">
+                        <!-- Dynamic Deco Options -->
+                    </div>
+                </div>
+
+                <!-- 3. Personality / Trait Type -->
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                    <label class="block text-[11px] font-extrabold text-slate-300 mb-1.5">戦闘型（特性ステータス）</label>
+                    <div id="type-selector" class="grid grid-cols-2 gap-1.5">
+                        <!-- Dynamic Personality Types -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB 3: STATS & POINT ALLOCATION ===== -->
+        <div id="view-stats" class="tab-view flex-1 flex flex-col overflow-hidden bg-slate-900/80 hidden p-3">
+            <h2 class="text-sm font-black text-indigo-400 flex items-center mb-2">
+                <i class="fas fa-chart-line mr-2 text-amber-400"></i> キャラステ振り・転生育成
+            </h2>
+
+            <!-- Character Select Dropdown -->
+            <div class="mb-3">
+                <select id="stat-char-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-200 focus:outline-none focus:border-indigo-400">
+                    <!-- Character options -->
+                </select>
+            </div>
+
+            <!-- Stat Allocation Box -->
+            <div id="stat-alloc-box" class="flex-1 flex flex-col justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800 overflow-y-auto space-y-3">
+                <div>
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-800 mb-3">
+                        <div class="flex items-center space-x-2">
+                            <span id="alloc-emoji-icon" class="text-3xl">🥺</span>
+                            <div>
+                                <div id="alloc-char-name" class="font-extrabold text-sm text-white">---</div>
+                                <div id="alloc-char-level" class="text-[10px] text-amber-400 font-bold">Lv.1</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-400 block">未割り当てpt</span>
+                            <span id="alloc-points-left" class="text-lg font-black text-amber-400">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Individual Stats Bars -->
+                    <div class="space-y-2">
+                        <!-- ATK -->
+                        <div class="bg-slate-900 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold text-rose-400 block">⚔️ 攻撃力 (ATK)</span>
+                                <span id="val-atk" class="text-xs font-extrabold text-white">10</span>
+                            </div>
+                            <button onclick="addStatPoint('atk')" class="bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-black active:scale-95 transition">
+                                +1 pt
+                            </button>
+                        </div>
+
+                        <!-- SPEED -->
+                        <div class="bg-slate-900 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold text-indigo-400 block">⚡ 攻撃速度 (SPD)</span>
+                                <span id="val-spd" class="text-xs font-extrabold text-white">1.0s</span>
+                            </div>
+                            <button onclick="addStatPoint('spd')" class="bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-lg text-xs font-black active:scale-95 transition">
+                                +1 pt
+                            </button>
+                        </div>
+
+                        <!-- CRIT -->
+                        <div class="bg-slate-900 p-2 rounded-xl border border-slate-800 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs font-bold text-amber-400 block">🎯 会心率 (CRIT)</span>
+                                <span id="val-crit" class="text-xs font-extrabold text-white">5%</span>
+                            </div>
+                            <button onclick="addStatPoint('crit')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-black active:scale-95 transition">
+                                +1 pt
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Transmigration Panel -->
+                    <div class="mt-3 bg-purple-950/40 p-2.5 rounded-xl border border-purple-500/30">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-xs font-black text-purple-300 flex items-center">
+                                <i class="fas fa-star text-amber-400 mr-1"></i> キャラ転生
+                            </span>
+                            <span class="text-[10px] text-purple-300 font-bold">転生回数: <strong id="val-trans-count" class="text-amber-400 font-black">0</strong> 回</span>
+                        </div>
+                        <p class="text-[9px] text-slate-400 mb-2">高Lvで転生するほど大量の「⭐ 転生のかけら」を獲得！転生するとレベルはLv.1に戻り、転生回数に応じて基礎ステータスが強化されます。</p>
+                        <button id="btn-transmigrate" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-2 rounded-lg text-xs shadow border-b-2 border-purple-900 transition active:scale-95 flex justify-between px-3 items-center">
+                            <span>✨ 転生を実行 (Lv.10以上必要)</span>
+                            <span class="text-amber-300">獲得: <strong id="gain-trans-mat">0</strong> ⭐</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Level Up Button -->
+                <button id="btn-lvl-up-char" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black py-2.5 rounded-xl text-xs shadow-md border-b-2 border-amber-700 active:scale-98 transition flex justify-between px-4 items-center">
+                    <span>素材でレベルアップ (+3pt獲得)</span>
+                    <span>⭐ <strong id="cost-lvl-up">1</strong> 素材</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== TAB 4: SYNTHESIS & EVOLUTION ===== -->
+        <div id="view-synthesis" class="tab-view flex-1 flex flex-col overflow-hidden bg-slate-900/80 hidden p-3">
+            <h2 class="text-sm font-black text-purple-400 flex items-center mb-1">
+                <i class="fas fa-dna mr-2 text-indigo-400"></i> 絵文字合成・レシピ研究
+            </h2>
+            <p class="text-[10px] text-slate-400 mb-2">2体を融合！特定の組み合わせ（例: 🥺+😳=🙄）で新ベース顔を解禁！</p>
+
+            <div class="flex-1 flex flex-col justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800 overflow-y-auto">
+                <!-- Fuse Slots -->
+                <div class="grid grid-cols-2 gap-3 my-2">
+                    <!-- Slot A -->
+                    <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-bold text-slate-500 mb-1">素材キャラ A</span>
+                        <select id="fuse-select-a" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1 text-[11px] font-bold text-slate-300 mb-2">
+                            <!-- Options -->
+                        </select>
+                        <div id="fuse-icon-a" class="text-4xl my-1">❓</div>
+                    </div>
+
+                    <!-- Slot B -->
+                    <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex flex-col items-center justify-center">
+                        <span class="text-[10px] font-bold text-slate-500 mb-1">素材キャラ B</span>
+                        <select id="fuse-select-b" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-1 text-[11px] font-bold text-slate-300 mb-2">
+                            <!-- Options -->
+                        </select>
+                        <div id="fuse-icon-b" class="text-4xl my-1">❓</div>
+                    </div>
+                </div>
+
+                <!-- Preview Result Box -->
+                <div class="bg-purple-950/30 border border-purple-500/30 p-2.5 rounded-xl text-center my-1">
+                    <span class="text-[10px] text-purple-300 block font-bold mb-1">合成予測</span>
+                    <div class="flex items-center justify-center space-x-2">
+                        <span id="fuse-preview-icon" class="text-3xl">✨</span>
+                        <div class="text-left">
+                            <div id="fuse-preview-title" class="text-xs font-black text-amber-300">未知の錬成</div>
+                            <div id="fuse-preview-desc" class="text-[10px] text-slate-400">新しい表情がアンロックされるかも！</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fuse Execution Button -->
+                <button id="btn-exec-fuse" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-3 rounded-xl text-xs shadow-lg border-b-2 border-purple-900 active:scale-95 transition mt-2">
+                    🧬 特殊融合を実行する (💰 100)
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== TAB 5: EMOJI COLLECTION ===== -->
+        <div id="view-collection" class="tab-view flex-1 flex flex-col overflow-hidden bg-slate-900/80 hidden p-3">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-sm font-black text-amber-400 flex items-center">
+                    <i class="fas fa-book-open mr-2 text-indigo-400"></i> 絵文字図鑑 (コレクション)
+                </h2>
+                <div class="text-xs font-bold text-slate-400">
+                    <span id="col-count-unlocked" class="text-amber-400 font-black">0</span> / <span id="col-count-total">0</span> 解放
+                </div>
+            </div>
+
+            <!-- Scrollable Emoji Collection Grid -->
+            <div id="collection-grid" class="flex-1 overflow-y-auto grid grid-cols-5 gap-2 p-2 bg-slate-950 rounded-2xl border border-slate-800">
+                <!-- Dynamic Collection Cells -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTTOM TAB NAVIGATION BAR -->
+    <nav class="bg-slate-950 border-t border-slate-800 p-1.5 flex justify-around items-center flex-none" style="padding-bottom: max(0.375rem, env(safe-area-inset-bottom));">
+        <button onclick="switchTab('battle')" id="tab-btn-battle" class="tab-btn active flex-1 py-1.5 flex flex-col items-center text-amber-400 font-bold transition">
+            <i class="fas fa-swords text-base"></i>
+            <span class="text-[9px] mt-0.5">バトル</span>
+        </button>
+        <button onclick="switchTab('creator')" id="tab-btn-creator" class="tab-btn flex-1 py-1.5 flex flex-col items-center text-slate-500 hover:text-slate-300 font-bold transition">
+            <i class="fas fa-paint-brush text-base"></i>
+            <span class="text-[9px] mt-0.5">作成</span>
+        </button>
+        <button onclick="switchTab('stats')" id="tab-btn-stats" class="tab-btn flex-1 py-1.5 flex flex-col items-center text-slate-500 hover:text-slate-300 font-bold transition">
+            <i class="fas fa-sliders text-base"></i>
+            <span class="text-[9px] mt-0.5">ステ振り</span>
+        </button>
+        <button onclick="switchTab('synthesis')" id="tab-btn-synthesis" class="tab-btn flex-1 py-1.5 flex flex-col items-center text-slate-500 hover:text-slate-300 font-bold transition">
+            <i class="fas fa-dna text-base"></i>
+            <span class="text-[9px] mt-0.5">合成・レシピ</span>
+        </button>
+        <button onclick="switchTab('collection')" id="tab-btn-collection" class="tab-btn flex-1 py-1.5 flex flex-col items-center text-slate-500 hover:text-slate-300 font-bold transition">
+            <i class="fas fa-book-open text-base"></i>
+            <span class="text-[9px] mt-0.5">図鑑</span>
+        </button>
+    </nav>
+
+    <!-- SCRIPT ENGINE -->
+    <script>
+        // --- MASTER DATA: COMPREHENSIVE FACE EMOJIS (150+) ---
+        const ALL_FACE_EMOJIS = [
+            // Smiling & Happy Faces
+            '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', 
+            '🫠', '😉', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', 
+            '😙', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🫢', 
+            '🫣', '🤫', '🤔', '🫡', '🤐', '🤨', '😐', '😑', '😶', '🫥', 
+            '😏', '😒', '🙄', '😬', '😮‍💨', '🤥', '🫨', '😌', '😔', '😪', 
+            '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵', '🥶', 
+            '🥴', '😵', '😵‍💫', '🤯', '🤠', '🥳', '🥸', '😎', '🤓', '🧐', 
+            // Sad & Concerned Faces
+            '😕', '😟', '🙁', '😮', '😯', '😲', '😳', '🥺', '🥹', '😦', 
+            '😧', '📁', '😭', '😱', '😖', '😣', '😞', '😓', '😩', '😫', 
+            '🥱', '😤', '😡', '🤬', '😈', '👿', '💀', '☠️', '💩', '🤡', 
+            '👹', '👺', '👻', '👽', '👾', '🤖',
+            // Cat Faces
+            '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾',
+            // Monkey / Special Faces
+            '🙈', '🙉', '🙊', '🗿'
+        ];
+
+        const UNIQUE_FACE_EMOJIS = Array.from(new Set(ALL_FACE_EMOJIS));
+
+        const RECIPES = [
+            { a: '🥺', b: '😳', result: '🙄', title: '呆れ顔の法則' },
+            { a: '😡', b: '🥶', result: '🫨', title: '感情の激動' },
+            { a: '😁', b: '😭', result: '🥹', title: '感涙の笑み' },
+            { a: '😎', b: '🔥', result: '🤯', title: '脳内爆発' },
+            { a: '🥺', b: '😁', result: '🫣', title: 'チラ見の心理' },
+            { a: '🤖', b: '👻', result: '👽', title: '未知の生命体' },
+            { a: '👿', b: '🐱', result: '😼', title: '邪悪ニャン' },
+            { a: '🗿', b: '💩', result: '🤡', title: 'シュールな道化' },
+            { a: '😳', b: '🥵', result: '🫠', title: 'とろける感情' },
+            { a: '😁', b: '😎', result: '🥳', title: 'パリピ開花' },
+            { a: '😡', b: '👿', result: '🤬', title: '大怒号' },
+            { a: '😴', b: '🤤', result: '🥱', title: '極上の眠気' },
+            { a: '😐', b: '😑', result: '😶', title: '無の領域' }
+        ];
+
+        const PART_DECOS = ['🔥', '⚡', '✨', '👑', '⚔️', '🛡️', '❄️', '💎', '🕊️', '🌿', '無'];
+        const PERSONALITY_TYPES = [
+            { id: 'balance', name: 'バランス型', atkBonus: 1.0, spdBonus: 1.0, critBonus: 5 },
+            { id: 'power', name: '脳筋パワー型', atkBonus: 1.6, spdBonus: 0.8, critBonus: 5 },
+            { id: 'speed', name: '超高速スピーダー', atkBonus: 0.8, spdBonus: 1.5, critBonus: 10 },
+            { id: 'crit', name: '会心マスター', atkBonus: 1.1, spdBonus: 1.0, critBonus: 25 }
+        ];
+        const ENEMY_EMOJIS = ['👾', '👹', '👺', '💀', '🕷️', '🐙', '🦖', '🦇', '蜥'];
+
+        const SAVE_KEY = 'emoji_factory_custom_save_v6';
+
+        // State Container
+        let gameState = {
+            coins: 100,
+            transMaterial: 5,
+            stage: 1,
+            subStage: 1,
+            sound: true,
+            unlockedBases: ['🥺', '😳', '😁', '😎', '😡', '🤖', '👿', '👻', '😑', '🗿'],
+            characters: [
+                {
+                    id: 'char_default_1',
+                    name: 'ぴえん丸',
+                    base: '🥺',
+                    deco: '🔥',
+                    type: 'balance',
+                    title: '始まりの',
+                    level: 1,
+                    transCount: 0,
+                    inParty: true,
+                    stats: { atkPt: 0, spdPt: 0, critPt: 0 },
+                    ptsLeft: 3
+                }
+            ],
+            creatorDraft: {
+                base: '🥺',
+                deco: '🔥',
+                type: 'balance',
+                name: 'マイ絵文字'
+            }
+        };
+
+        let battleState = {
+            enemyHp: 30,
+            enemyMaxHp: 30,
+            selectedStatCharId: null
+        };
+
+        // --- SOUND ENGINE ---
+        class SoundEngine {
+            constructor() { this.ctx = null; }
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+            play(freq, type = 'sine', duration = 0.1) {
+                if (!gameState.sound) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            hit() { this.play(160, 'square', 0.05); }
+            coin() { this.play(880, 'sine', 0.08); setTimeout(() => this.play(1200, 'sine', 0.12), 40); }
+            upgrade() { this.play(523, 'triangle', 0.08); setTimeout(() => this.play(659, 'triangle', 0.1), 60); }
+            unlock() { this.play(440, 'sine', 0.1); setTimeout(() => this.play(880, 'sine', 0.2), 80); }
+            trans() { this.play(350, 'sawtooth', 0.15); setTimeout(() => this.play(700, 'sine', 0.25), 100); }
+        }
+        const sound = new SoundEngine();
+
+        // --- STAT CALCULATIONS ---
+        function getCharStats(char) {
+            const pType = PERSONALITY_TYPES.find(t => t.id === char.type) || PERSONALITY_TYPES[0];
+            const transBonus = (char.transCount || 0) * 10;
+            const baseAtk = (15 + transBonus + (char.level * 8) + (char.stats.atkPt * 12)) * pType.atkBonus;
+            const interval = Math.max(0.3, (1.2 - (char.stats.spdPt * 0.08)) / pType.spdBonus);
+            const critRate = pType.critBonus + (char.stats.critPt * 3);
+            const dps = Math.floor(baseAtk / interval);
+            return { atk: Math.floor(baseAtk), interval: interval.toFixed(2), crit: critRate, dps };
+        }
+
+        function calculatePartyTotalDps() {
+            let total = 0;
+            gameState.characters.filter(c => c.inParty).forEach(c => {
+                total += getCharStats(c).dps;
+            });
+            return total;
+        }
+
+        // --- TAB NAVIGATION ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('text-amber-400', 'active');
+                el.classList.add('text-slate-500');
+            });
+
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            activeBtn.classList.add('text-amber-400', 'active');
+            activeBtn.classList.remove('text-slate-500');
+
+            if (tabId === 'stats') renderStatsTab();
+            if (tabId === 'synthesis') renderSynthesisTab();
+            if (tabId === 'collection') renderCollectionTab();
+        }
+
+        // --- RENDERERS ---
+        function renderUI() {
+            document.getElementById('stat-coins').innerText = gameState.coins.toLocaleString();
+            document.getElementById('stat-trans-material').innerText = (gameState.transMaterial || 0).toLocaleString();
+            document.getElementById('stat-total-dps').innerText = calculatePartyTotalDps().toLocaleString();
+            document.getElementById('stage-title').innerText = `STAGE ${gameState.stage}-${gameState.subStage}`;
+            document.getElementById('stat-unlocked-count').innerText = gameState.unlockedBases.length;
+            document.getElementById('stat-total-count').innerText = UNIQUE_FACE_EMOJIS.length;
+
+            renderPartyList();
+            renderCreatorOptions();
+            saveGame();
+        }
+
+        function renderPartyList() {
+            const listEl = document.getElementById('roster-list');
+            listEl.innerHTML = '';
+
+            const partyCount = gameState.characters.filter(c => c.inParty).length;
+            document.getElementById('squad-count').innerText = partyCount;
+
+            const frontline = document.getElementById('party-frontline');
+            frontline.innerHTML = '';
+
+            gameState.characters.forEach(char => {
+                const stats = getCharStats(char);
+
+                if (char.inParty) {
+                    const heroIcon = document.createElement('div');
+                    heroIcon.className = 'text-3xl filter drop-shadow relative animate-bounce-hero';
+                    heroIcon.innerHTML = `<span>${char.base}</span><span class="absolute -top-1 -right-1 text-xs">${char.deco === '無' ? '' : char.deco}</span>`;
+                    frontline.appendChild(heroIcon);
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-xl border flex items-center justify-between transition ${
+                    char.inParty ? 'bg-slate-900 border-indigo-500/50' : 'bg-slate-950/60 border-slate-800 opacity-60'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="text-3xl relative">
+                            <span>${char.base}</span>
+                            <span class="absolute -top-1 -right-1 text-xs">${char.deco === '無' ? '' : char.deco}</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-1.5">
+                                <span class="font-extrabold text-xs text-white">${char.title ? char.title + ' ' : ''}${char.name}</span>
+                                <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.2 rounded">Lv.${char.level} ${char.transCount > 0 ? '(転生★' + char.transCount + ')' : ''}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">
+                                ATK: <strong class="text-rose-400">${stats.atk}</strong> | DPS: <strong class="text-indigo-300">${stats.dps}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-toggle-party px-3 py-1 rounded-lg text-xs font-bold transition ${
+                        char.inParty 
+                        ? 'bg-indigo-950 border border-indigo-500/40 text-indigo-300 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-500' 
+                        : 'bg-slate-800 text-slate-300 hover:bg-indigo-600 hover:text-white'
+                    }">
+                        ${char.inParty ? '出撃中' : '待機中'}
+                    </button>
+                `;
+
+                card.querySelector('.btn-toggle-party').onclick = () => {
+                    if (char.inParty && partyCount <= 1) return;
+                    char.inParty = !char.inParty;
+                    sound.hit();
+                    renderUI();
+                };
+
+                listEl.appendChild(card);
+            });
+        }
+
+        // --- CREATOR TAB LOGIC ---
+        function renderCreatorOptions() {
+            const baseList = document.getElementById('part-base-list');
+            baseList.innerHTML = '';
+            
+            gameState.unlockedBases.forEach(b => {
+                const btn = document.createElement('button');
+                btn.className = `text-xl p-1 rounded-lg border transition flex items-center justify-center ${
+                    gameState.creatorDraft.base === b ? 'bg-amber-500/20 border-amber-400 scale-105' : 'bg-slate-950 border-slate-800'
+                }`;
+                btn.innerText = b;
+                btn.onclick = () => {
+                    gameState.creatorDraft.base = b;
+                    updateDraftPreview();
+                    renderCreatorOptions();
+                };
+                baseList.appendChild(btn);
+            });
+
+            const decoList = document.getElementById('part-deco-list');
+            decoList.innerHTML = '';
+            PART_DECOS.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = `text-lg px-3 py-1 rounded-xl border transition flex-none ${
+                    gameState.creatorDraft.deco === d ? 'bg-amber-500/20 border-amber-400 scale-105 text-white' : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`;
+                btn.innerText = d;
+                btn.onclick = () => {
+                    gameState.creatorDraft.deco = d;
+                    updateDraftPreview();
+                    renderCreatorOptions();
+                };
+                decoList.appendChild(btn);
+            });
+
+            const typeBox = document.getElementById('type-selector');
+            typeBox.innerHTML = '';
+            PERSONALITY_TYPES.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = `p-2 rounded-xl border text-left transition ${
+                    gameState.creatorDraft.type === t.id ? 'bg-indigo-950 border-indigo-400 text-indigo-200' : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`;
+                btn.innerHTML = `<div class="font-extrabold text-xs">${t.name}</div>`;
+                btn.onclick = () => {
+                    gameState.creatorDraft.type = t.id;
+                    updateDraftPreview();
+                    renderCreatorOptions();
+                };
+                typeBox.appendChild(btn);
+            });
+
+            updateDraftPreview();
+        }
+
+        function updateDraftPreview() {
+            document.getElementById('prev-base').innerText = gameState.creatorDraft.base;
+            document.getElementById('prev-deco').innerText = gameState.creatorDraft.deco === '無' ? '' : gameState.creatorDraft.deco;
+            const pType = PERSONALITY_TYPES.find(t => t.id === gameState.creatorDraft.type);
+            document.getElementById('prev-type-name').innerText = pType.name;
+        }
+
+        document.getElementById('btn-save-character').onclick = () => {
+            const nameInput = document.getElementById('creator-name-input').value.trim() || 'マイ絵文字';
+            const newChar = {
+                id: 'char_' + Date.now(),
+                name: nameInput,
+                base: gameState.creatorDraft.base,
+                deco: gameState.creatorDraft.deco,
+                type: gameState.creatorDraft.type,
+                title: '',
+                level: 1,
+                transCount: 0,
+                inParty: true,
+                stats: { atkPt: 0, spdPt: 0, critPt: 0 },
+                ptsLeft: 3
+            };
+            gameState.characters.push(newChar);
+            sound.upgrade();
+            renderUI();
+            switchTab('battle');
+        };
+
+        document.getElementById('btn-quick-create').onclick = () => {
+            switchTab('creator');
+        };
+
+        // --- STATS TAB & TRANSMIGRATION LOGIC ---
+        function renderStatsTab() {
+            const select = document.getElementById('stat-char-select');
+            select.innerHTML = '';
+            gameState.characters.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.innerText = `${c.name} (Lv.${c.level} ${c.transCount > 0 ? '★' + c.transCount : ''})`;
+                select.appendChild(opt);
+            });
+
+            if (!battleState.selectedStatCharId && gameState.characters.length > 0) {
+                battleState.selectedStatCharId = gameState.characters[0].id;
+            }
+
+            select.value = battleState.selectedStatCharId;
+            select.onchange = (e) => {
+                battleState.selectedStatCharId = e.target.value;
+                updateStatsAllocBox();
+            };
+
+            updateStatsAllocBox();
+        }
+
+        function updateStatsAllocBox() {
+            const char = gameState.characters.find(c => c.id === battleState.selectedStatCharId);
+            if (!char) return;
+
+            const stats = getCharStats(char);
+
+            document.getElementById('alloc-emoji-icon').innerText = char.base;
+            document.getElementById('alloc-char-name').innerText = `${char.title || ''} ${char.name}`;
+            document.getElementById('alloc-char-level').innerText = `Lv.${char.level} (${PERSONALITY_TYPES.find(t => t.id === char.type).name})`;
+            document.getElementById('alloc-points-left').innerText = char.ptsLeft;
+            document.getElementById('val-trans-count').innerText = char.transCount || 0;
+
+            document.getElementById('val-atk').innerText = `${stats.atk} (+${char.stats.atkPt}pt)`;
+            document.getElementById('val-spd').innerText = `${stats.interval}s (+${char.stats.spdPt}pt)`;
+            document.getElementById('val-crit').innerText = `${stats.crit}% (+${char.stats.critPt}pt)`;
+
+            const gainMaterialCount = Math.max(1, Math.floor(char.level / 2));
+            document.getElementById('gain-trans-mat').innerText = gainMaterialCount;
+
+            const costMaterial = 1;
+            document.getElementById('cost-lvl-up').innerText = costMaterial;
+
+            document.getElementById('btn-lvl-up-char').onclick = () => {
+                if ((gameState.transMaterial || 0) >= costMaterial) {
+                    gameState.transMaterial -= costMaterial;
+                    char.level++;
+                    char.ptsLeft += 3;
+                    sound.upgrade();
+                    renderUI();
+                    renderStatsTab();
+                } else {
+                    alert('レベルアップに必要な「⭐ 転生のかけら」がありません！転生を行って獲得してください。');
+                    sound.hit();
+                }
+            };
+
+            document.getElementById('btn-transmigrate').onclick = () => {
+                if (char.level < 10) {
+                    alert('転生にはLv.10以上必要です！');
+                    sound.hit();
+                    return;
+                }
+
+                if (confirm(`【${char.name}】を転生させますか？\n・レベルはLv.1にリセット\n・転生回数★+1\n・「⭐ 転生のかけら」を ${gainMaterialCount}個 獲得！`)) {
+                    gameState.transMaterial = (gameState.transMaterial || 0) + gainMaterialCount;
+                    char.level = 1;
+                    char.transCount = (char.transCount || 0) + 1;
+                    sound.trans();
+                    alert(`✨ 転生成功！ 「⭐ 転生のかけら」を ${gainMaterialCount}個 獲得しました！`);
+                    renderUI();
+                    renderStatsTab();
+                }
+            };
+        }
+
+        function addStatPoint(type) {
+            const char = gameState.characters.find(c => c.id === battleState.selectedStatCharId);
+            if (char && char.ptsLeft > 0) {
+                char.ptsLeft--;
+                if (type === 'atk') char.stats.atkPt++;
+                if (type === 'spd') char.stats.spdPt++;
+                if (type === 'crit') char.stats.critPt++;
+                sound.coin();
+                renderUI();
+                updateStatsAllocBox();
+            }
+        }
+
+        // --- SYNTHESIS & RECIPE TAB LOGIC ---
+        function renderSynthesisTab() {
+            const selA = document.getElementById('fuse-select-a');
+            const selB = document.getElementById('fuse-select-b');
+            selA.innerHTML = '';
+            selB.innerHTML = '';
+
+            gameState.characters.forEach(c => {
+                const optA = document.createElement('option');
+                optA.value = c.id;
+                optA.innerText = `${c.name} (${c.base})`;
+                selA.appendChild(optA);
+
+                const optB = document.createElement('option');
+                optB.value = c.id;
+                optB.innerText = `${c.name} (${c.base})`;
+                selB.appendChild(optB);
+            });
+
+            if (gameState.characters.length >= 2) {
+                selB.selectedIndex = 1;
+            }
+
+            const updateIconsAndPreview = () => {
+                const cA = gameState.characters.find(c => c.id === selA.value);
+                const cB = gameState.characters.find(c => c.id === selB.value);
+                document.getElementById('fuse-icon-a').innerText = cA ? cA.base : '❓';
+                document.getElementById('fuse-icon-b').innerText = cB ? cB.base : '❓';
+
+                if (cA && cB) {
+                    const matchedRecipe = RECIPES.find(r => 
+                        (r.a === cA.base && r.b === cB.base) || (r.a === cB.base && r.b === cA.base)
+                    );
+
+                    if (matchedRecipe) {
+                        document.getElementById('fuse-preview-icon').innerText = matchedRecipe.result;
+                        document.getElementById('fuse-preview-title').innerText = `発見！ ${matchedRecipe.title}`;
+                        document.getElementById('fuse-preview-desc').innerText = `確定解禁: ${matchedRecipe.a} + ${matchedRecipe.b} ➡️ ${matchedRecipe.result}`;
+                    } else {
+                        document.getElementById('fuse-preview-icon').innerText = '❓';
+                        document.getElementById('fuse-preview-title').innerText = '一般変異合成';
+                        document.getElementById('fuse-preview-desc').innerText = '未解放の顔絵文字がランダムで解放されるかも！';
+                    }
+                }
+            };
+
+            selA.onchange = updateIconsAndPreview;
+            selB.onchange = updateIconsAndPreview;
+            updateIconsAndPreview();
+        }
+
+        document.getElementById('btn-exec-fuse').onclick = () => {
+            const selA = document.getElementById('fuse-select-a').value;
+            const selB = document.getElementById('fuse-select-b').value;
+
+            if (selA === selB) {
+                alert('異なるキャラを選択してください！');
+                sound.hit();
+                return;
+            }
+
+            if (gameState.coins < 100) {
+                alert('コインが足りません！ (100 coins 必要)');
+                sound.hit();
+                return;
+            }
+
+            gameState.coins -= 100;
+
+            const cA = gameState.characters.find(c => c.id === selA);
+            const cB = gameState.characters.find(c => c.id === selB);
+
+            const matchedRecipe = RECIPES.find(r => 
+                (r.a === cA.base && r.b === cB.base) || (r.a === cB.base && r.b === cA.base)
+            );
+
+            let newUnlockedFace = null;
+            if (matchedRecipe) {
+                newUnlockedFace = matchedRecipe.result;
+            } else {
+                const lockedList = UNIQUE_FACE_EMOJIS.filter(e => !gameState.unlockedBases.includes(e));
+                if (lockedList.length > 0) {
+                    newUnlockedFace = lockedList[Math.floor(Math.random() * lockedList.length)];
+                } else {
+                    newUnlockedFace = cA.base;
+                }
+            }
+
+            if (newUnlockedFace && !gameState.unlockedBases.includes(newUnlockedFace)) {
+                gameState.unlockedBases.push(newUnlockedFace);
+                sound.unlock();
+                alert(`✨ 新しい顔絵文字「 ${newUnlockedFace} 」がアンロックされました！`);
+            } else {
+                sound.upgrade();
+            }
+
+            const TITLES = ['覚醒の', '超絶', '伝説の', '神聖なる', '極意の', '極大'];
+            cA.title = TITLES[Math.floor(Math.random() * TITLES.length)];
+            cA.base = newUnlockedFace;
+            cA.level += Math.max(1, Math.floor(cB.level / 2));
+            cA.ptsLeft += 5;
+
+            gameState.characters = gameState.characters.filter(c => c.id !== selB);
+
+            renderUI();
+            switchTab('battle');
+        };
+
+        // --- EMOJI COLLECTION TAB LOGIC ---
+        function renderCollectionTab() {
+            const grid = document.getElementById('collection-grid');
+            grid.innerHTML = '';
+
+            document.getElementById('col-count-unlocked').innerText = gameState.unlockedBases.length;
+            document.getElementById('col-count-total').innerText = UNIQUE_FACE_EMOJIS.length;
+
+            UNIQUE_FACE_EMOJIS.forEach(emoji => {
+                const isUnlocked = gameState.unlockedBases.includes(emoji);
+                const cell = document.createElement('div');
+                cell.className = `h-12 rounded-xl flex items-center justify-center text-2xl border transition ${
+                    isUnlocked ? 'bg-slate-900 border-amber-500/40 text-white shadow' : 'bg-slate-950/80 border-slate-800 text-slate-700 select-none'
+                }`;
+                cell.innerHTML = isUnlocked ? emoji : '<i class="fas fa-lock text-xs text-slate-700"></i>';
+                grid.appendChild(cell);
+            });
+        }
+
+        // --- BATTLE & STAGE ENGINE ---
+        function spawnEnemy() {
+            const maxHp = Math.floor(25 * Math.pow(1.22, (gameState.stage - 1) * 5 + gameState.subStage));
+            battleState.enemyHp = maxHp;
+            battleState.enemyMaxHp = maxHp;
+
+            const enemyChar = ENEMY_EMOJIS[Math.floor(Math.random() * ENEMY_EMOJIS.length)];
+            document.getElementById('enemy-emoji').innerText = enemyChar;
+            updateEnemyHpBar();
+        }
+
+        function updateEnemyHpBar() {
+            const pct = Math.max(0, (battleState.enemyHp / battleState.enemyMaxHp) * 100);
+            document.getElementById('enemy-hp-bar').style.width = `${pct}%`;
+            document.getElementById('enemy-hp-text').innerText = `${Math.ceil(battleState.enemyHp)} / ${battleState.enemyMaxHp}`;
+        }
+
+        document.getElementById('enemy-target').onclick = () => {
+            damageEnemy(15);
+        };
+
+        function damageEnemy(amount) {
+            battleState.enemyHp -= amount;
+            sound.hit();
+            showDamageFx(amount);
+
+            if (battleState.enemyHp <= 0) {
+                const earned = Math.floor(10 * gameState.stage * gameState.subStage);
+                gameState.coins += earned;
+                sound.coin();
+
+                gameState.subStage++;
+                if (gameState.subStage > 5) {
+                    gameState.subStage = 1;
+                    gameState.stage++;
+                }
+
+                spawnEnemy();
+                renderUI();
+            }
+
+            updateEnemyHpBar();
+        }
+
+        function showDamageFx(amount) {
+            const layer = document.getElementById('damage-layer');
+            const num = document.createElement('div');
+            num.className = 'absolute -top-3 right-0 text-rose-400 font-black text-sm animate-float-up pointer-events-none drop-shadow';
+            num.innerText = `-${amount}`;
+            layer.appendChild(num);
+            setTimeout(() => num.remove(), 700);
+        }
+
+        // Auto DPS Tick
+        setInterval(() => {
+            const dps = calculatePartyTotalDps();
+            if (dps > 0) {
+                damageEnemy(Math.max(1, Math.floor(dps * 0.8)));
+            }
+        }, 800);
+
+        // --- GLOBAL SAVE & LOAD ---
+        function saveGame() {
+            try { localStorage.setItem(SAVE_KEY, JSON.stringify(gameState)); } catch(e) {}
+        }
+
+        function loadGame() {
+            try {
+                const data = localStorage.getItem(SAVE_KEY);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    gameState = { ...gameState, ...parsed };
+                }
+            } catch(e) {}
+        }
+
+        document.getElementById('btn-sound').onclick = () => {
+            gameState.sound = !gameState.sound;
+            document.getElementById('btn-sound').innerHTML = gameState.sound ? '<i class="fas fa-volume-up text-xs"></i>' : '<i class="fas fa-volume-mute text-xs text-slate-500"></i>';
+        };
+
+        document.getElementById('btn-reset').onclick = () => {
+            if (confirm('ゲームデータをリセットしますか？')) {
+                localStorage.removeItem(SAVE_KEY);
+                location.reload();
+            }
+        };
+
+        // Initialize Game
+        window.onload = () => {
+            loadGame();
+            spawnEnemy();
+            renderUI();
+        };
+    </script>
+</body>
+</html>
